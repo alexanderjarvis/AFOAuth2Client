@@ -22,8 +22,10 @@
 
 #import "AFOAuth2Client.h"
 
-NSString * const kAFOAuthBasicGrantType = @"user_basic";
-NSString * const kAFOauthRefreshGrantType = @"refresh_token"; 
+// Resource Owner Password Credentials Grant
+// http://tools.ietf.org/html/draft-ietf-oauth-v2-28#section-4.3
+NSString * const kAFOAuthResourceOwnerPasswordCredentialsGrantType = @"password";
+NSString * const kAFOauthRefreshGrantType = @"refresh_token";
 
 @interface AFOAuth2Client ()
 @property (readwrite, nonatomic, copy) NSString *serviceProviderIdentifier;
@@ -57,7 +59,7 @@ NSString * const kAFOauthRefreshGrantType = @"refresh_token";
                                failure:(void (^)(NSError *error))failure
 {
     NSMutableDictionary *parameters = [NSMutableDictionary dictionary];
-    [parameters setObject:kAFOAuthBasicGrantType forKey:@"grant_type"];
+    [parameters setObject:kAFOAuthResourceOwnerPasswordCredentialsGrantType forKey:@"grant_type"];
     [parameters setObject:clientID forKey:@"client_id"];
     [parameters setObject:secret forKey:@"client_secret"];
     [parameters setObject:username forKey:@"username"];
