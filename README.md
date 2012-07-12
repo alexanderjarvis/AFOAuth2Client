@@ -10,6 +10,7 @@ This is still in early stages of development, so proceed with caution when using
 NSURL *url = [NSURL URLWithString:@"http://example.com/"];
 AFOAuth2Client *oauthClient = [AFOAuthClient clientWithBaseURL:url];
 [oauthClient registerHTTPOperationClass:[AFJSONRequestOperation class]];
+[oauthClient setDefaultHeader:@"Accept" value:@"application/json"];
 
 [oauthClient authenticateUsingOAuthWithPath:@"/oauth/token" 
                                    username:@"username"
