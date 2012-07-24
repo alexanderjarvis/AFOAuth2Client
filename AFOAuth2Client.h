@@ -52,6 +52,10 @@ extern NSString * const kAFOauthRefreshGrantType;
                                success:(void (^)(AFOAuthAccount *account))success
                                failure:(void (^)(NSError *error))failure;
 
+- (void)revokeTokenUsingOAuthWithPath:(NSString *)path
+                         success:(void (^)(AFOAuthAccount *account))success
+                         failure:(void (^)(NSError *error))failure;
+
 @end
 
 #pragma mark -

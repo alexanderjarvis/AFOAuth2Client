@@ -118,6 +118,22 @@ NSString * const kAFOauthRefreshGrantType = @"refresh_token";
     }];
 }
 
+- (void)revokeTokenUsingOAuthWithPath:(NSString *)path
+                              success:(void (^)(AFOAuthAccount *account))success
+                              failure:(void (^)(NSError *error))failure
+{
+    [self deletePath:path parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
+        if (success) {
+            [self clearAuthorizationHeader];
+            success(nil);
+        }
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+        if (failure) {
+            failure(error);
+        }
+    }];
+}
+
 @end
 
 #pragma mark -
