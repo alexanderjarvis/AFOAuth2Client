@@ -105,7 +105,7 @@ NSString * const kAFOauthRefreshGrantType = @"refresh_token";
                 }
             }
         } else {            
-            [self setAuthorizationHeaderWithToken:credential.accessToken];
+            [self setAuthorizationHeaderWithBearerToken:credential.accessToken];
             
             if (success) {
                 success(account);
