@@ -29,6 +29,8 @@ NSString * const kAFOAuthClientCredentialsGrantType = @"client_credentials";
 NSString * const kAFOAuthPasswordCredentialsGrantType = @"password";
 NSString * const kAFOAuthRefreshGrantType = @"refresh_token";
 
+NSString * const kAFOAuthError = @"AFOAuthError";
+
 #ifdef _SECURITY_SECITEM_H_
 NSString * const kAFOAuthCredentialServiceName = @"AFOAuthCredentialService";
 
@@ -174,15 +176,6 @@ static NSMutableDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *i
     [mutableRequest setValue:@"application/json" forHTTPHeaderField:@"Accept"];
 
     AFHTTPRequestOperation *requestOperation = [self HTTPRequestOperationWithRequest:mutableRequest success:^(AFHTTPRequestOperation *operation, id responseObject) {
-        if ([responseObject valueForKey:@"error"]) {
-            if (failure) {
-                // TODO: Resolve the `error` field into a proper NSError object
-                // http://tools.ietf.org/html/rfc6749#section-5.2
-                failure(nil);
-            }
-
-            return;
-        }
 
         NSString *refreshToken = [responseObject valueForKey:@"refresh_token"];
         if (refreshToken == nil || [refreshToken isEqual:[NSNull null]]) {
@@ -206,7 +199,21 @@ static NSMutableDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *i
         }
     } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
         if (failure) {
-            failure(error);
+            // http://tools.ietf.org/html/rfc6749#section-5.2
+            NSError *jsonError;
+            NSDictionary *message = [NSJSONSerialization JSONObjectWithData:[error.localizedRecoverySuggestion dataUsingEncoding:NSUTF8StringEncoding]
+                                                                    options:0
+                                                                      error:&jsonError];
+            if (!jsonError) {
+                AFOAuthError *oauthError = [AFOAuthError error:[message objectForKey:@"error"]
+                                              errorDescription:[message objectForKey:@"error_description"]
+                                                      errorUri:[message objectForKey:@"error_uri"]];
+                NSMutableDictionary *userInfo = [NSMutableDictionary dictionaryWithObject:oauthError forKey:kAFOAuthError];
+                [userInfo addEntriesFromDictionary:error.userInfo];
+                failure([NSError errorWithDomain:error.domain code:error.code userInfo:userInfo]);
+            } else {
+                failure(error);
+            }
         }
     }];
 
@@ -356,6 +363,43 @@ static NSMutableDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *i
     [encoder encodeObject:self.tokenType forKey:@"tokenType"];
     [encoder encodeObject:self.refreshToken forKey:@"refreshToken"];
     [encoder encodeObject:self.expiration forKey:@"expiration"];
+}
+
+@end
+
+#pragma mark -
+
+@interface AFOAuthError()
+
+@property (readwrite, nonatomic) NSString *error;
+@property (readwrite, nonatomic) NSString *errorDescription;
+@property (readwrite, nonatomic) NSString *errorUri;
+
+@end
+
+@implementation AFOAuthError
+
+@synthesize error = _error;
+@synthesize errorDescription = _errorDescription;
+@synthesize errorUri = _errorUri;
+
++ (instancetype)error:(NSString *)error errorDescription:(NSString *)errorDescription errorUri:(NSString *)errorUri
+{
+    return [[self alloc] initWithError:error errorDescription:errorDescription errorUri:errorUri];
+}
+
+- (id)initWithError:(NSString *)error errorDescription:(NSString *)errorDescription errorUri:(NSString *)errorUri
+{
+    self = [super init];
+    if (!self) {
+        return nil;
+    }
+    
+    self.error = error;
+    self.errorDescription = errorDescription;
+    self.errorUri = errorUri;
+    
+    return self;
 }
 
 @end

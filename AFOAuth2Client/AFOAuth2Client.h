@@ -209,3 +209,21 @@ extern NSString * const kAFOAuthCodeGrantType;
 extern NSString * const kAFOAuthClientCredentialsGrantType;
 extern NSString * const kAFOAuthPasswordCredentialsGrantType;
 extern NSString * const kAFOAuthRefreshGrantType;
+
+extern NSString * const kAFOAuthError;
+
+///--------------------------------------
+/// @name Accessing Error Properties
+///--------------------------------------
+
+@interface AFOAuthError : NSObject
+
++ (instancetype)error:(NSString *)error errorDescription:(NSString *)errorDescription errorUri:(NSString *)errorUri;
+
+- (id)initWithError:(NSString *)error errorDescription:(NSString *)errorDescription errorUri:(NSString *)errorUri;
+
+@property (readonly, nonatomic) NSString *error;
+@property (readonly, nonatomic) NSString *errorDescription;
+@property (readonly, nonatomic) NSString *errorUri;
+
+@end
