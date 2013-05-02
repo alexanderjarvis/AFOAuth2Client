@@ -199,18 +199,22 @@ static NSMutableDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *i
         }
     } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
         if (failure) {
-            // http://tools.ietf.org/html/rfc6749#section-5.2
-            NSError *jsonError;
-            NSDictionary *message = [NSJSONSerialization JSONObjectWithData:[error.localizedRecoverySuggestion dataUsingEncoding:NSUTF8StringEncoding]
-                                                                    options:0
-                                                                      error:&jsonError];
-            if (!jsonError) {
-                AFOAuthError *oauthError = [AFOAuthError error:[message objectForKey:@"error"]
-                                              errorDescription:[message objectForKey:@"error_description"]
-                                                      errorUri:[message objectForKey:@"error_uri"]];
-                NSMutableDictionary *userInfo = [NSMutableDictionary dictionaryWithObject:oauthError forKey:kAFOAuthError];
-                [userInfo addEntriesFromDictionary:error.userInfo];
-                failure([NSError errorWithDomain:error.domain code:error.code userInfo:userInfo]);
+            if (error.localizedRecoverySuggestion) {
+                // http://tools.ietf.org/html/rfc6749#section-5.2
+                NSError *jsonError;
+                NSDictionary *message = [NSJSONSerialization JSONObjectWithData:[error.localizedRecoverySuggestion dataUsingEncoding:NSUTF8StringEncoding]
+                                                                        options:0
+                                                                          error:&jsonError];
+                if (!jsonError) {
+                    AFOAuthError *oauthError = [AFOAuthError error:[message objectForKey:@"error"]
+                                                  errorDescription:[message objectForKey:@"error_description"]
+                                                          errorUri:[message objectForKey:@"error_uri"]];
+                    NSMutableDictionary *userInfo = [NSMutableDictionary dictionaryWithObject:oauthError forKey:kAFOAuthError];
+                    [userInfo addEntriesFromDictionary:error.userInfo];
+                    failure([NSError errorWithDomain:error.domain code:error.code userInfo:userInfo]);
+                } else {
+                    failure(error);
+                }
             } else {
                 failure(error);
             }
