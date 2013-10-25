@@ -32,10 +32,10 @@ NSString * const kAFOAuthRefreshGrantType = @"refresh_token";
 NSString * const kAFOAuthError = @"AFOAuthError";
 
 #ifdef _SECURITY_SECITEM_H_
-NSString * const kAFOAuthCredentialServiceName = @"AFOAuthCredentialService";
+NSString * const kAFOAuth2CredentialServiceName = @"AFOAuthCredentialService";
 
 static NSMutableDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *identifier) {
-    NSMutableDictionary *queryDictionary = [NSMutableDictionary dictionaryWithObjectsAndKeys:(__bridge id)kSecClassGenericPassword, kSecClass, kAFOAuthCredentialServiceName, kSecAttrService, nil];
+    NSMutableDictionary *queryDictionary = [NSMutableDictionary dictionaryWithObjectsAndKeys:(__bridge id)kSecClassGenericPassword, kSecClass, kAFOAuth2CredentialServiceName, kSecAttrService, nil];
     [queryDictionary setValue:identifier forKey:(__bridge id)kSecAttrAccount];
 
     return queryDictionary;
@@ -169,8 +169,6 @@ static NSMutableDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *i
     [mutableParameters setValue:self.secret forKey:@"client_secret"];
     parameters = [NSDictionary dictionaryWithDictionary:mutableParameters];
 
-    [self clearAuthorizationHeader];
-
     NSMutableURLRequest *mutableRequest = [self requestWithMethod:@"POST" path:path parameters:parameters];
     [mutableRequest setValue:@"application/json" forHTTPHeaderField:@"Accept"];
 
@@ -270,9 +268,7 @@ static NSMutableDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *i
 - (void)setRefreshToken:(NSString *)refreshToken
              expiration:(NSDate *)expiration
 {
-    if (!refreshToken || !expiration) {
-        return;
-    }
+    NSParameterAssert(expiration);
 
     self.refreshToken = refreshToken;
     self.expiration = expiration;
@@ -289,6 +285,13 @@ static NSMutableDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *i
 + (BOOL)storeCredential:(AFOAuthCredential *)credential
          withIdentifier:(NSString *)identifier
 {
+    return [[self class] storeCredential:credential withIdentifier:identifier withAccessibility:(__bridge id)kSecAttrAccessibleWhenUnlocked];
+}
+
++ (BOOL)storeCredential:(AFOAuthCredential *)credential
+         withIdentifier:(NSString *)identifier
+      withAccessibility:(id)securityAccessibility
+{
     NSMutableDictionary *queryDictionary = AFKeychainQueryDictionaryWithIdentifier(identifier);
 
     if (!credential) {
@@ -298,6 +301,7 @@ static NSMutableDictionary * AFKeychainQueryDictionaryWithIdentifier(NSString *i
     NSMutableDictionary *updateDictionary = [NSMutableDictionary dictionary];
     NSData *data = [NSKeyedArchiver archivedDataWithRootObject:credential];
     [updateDictionary setObject:data forKey:(__bridge id)kSecValueData];
+    [updateDictionary setObject:securityAccessibility forKey:(__bridge id)kSecAttrAccessible];
 
     OSStatus status;
     BOOL exists = ([self retrieveCredentialWithIdentifier:identifier] != nil);
